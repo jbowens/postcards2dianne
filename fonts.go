@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/golang/freetype"
 	"github.com/golang/freetype/truetype"
@@ -15,8 +16,12 @@ var (
 )
 
 func init() {
+	dir := os.Getenv("POSTCARD_FONTS_DIR")
+	if dir == "" {
+		dir = "/Library/fonts" // Mac OS X default
+	}
 	fonts = make(map[string]*truetype.Font)
-	err := filepath.Walk("fonts", func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -32,9 +37,9 @@ func init() {
 		}
 		ttf, err := freetype.ParseFont(b)
 		if err != nil {
-			return err
+			return nil // skip, don't error tho
 		}
-		name := filepath.Base(path)
+		name := strings.TrimSuffix(filepath.Base(path), ".ttf")
 		fonts[name] = ttf
 		if defaultFont == "" {
 			defaultFont = name

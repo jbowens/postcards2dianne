@@ -1,10 +1,12 @@
 package postcards2diane
 
 import (
+	"bytes"
 	"errors"
 	"image"
 	"image/color"
 	"image/draw"
+	"image/png"
 
 	"golang.org/x/image/math/fixed"
 
@@ -14,8 +16,8 @@ import (
 
 var postcardSizes = map[string]postcardSize{
 	"6x11": postcardSize{
-		dimensions: image.Rect(0, 0, 2250, 1250),
-		safe:       image.Rect(76, 76, 2174, 1174),
+		dimensions: image.Rect(0, 0, 4500, 2500),
+		safe:       image.Rect(152, 152, 4348, 2348),
 	},
 }
 
@@ -24,7 +26,7 @@ type postcardSize struct {
 	safe       image.Rectangle
 }
 
-func New(size string, lines []string) *Postcard {
+func New(size string, lines []string, message string) *Postcard {
 	return &Postcard{
 		size:       size,
 		font:       fonts[defaultFont],
@@ -32,6 +34,7 @@ func New(size string, lines []string) *Postcard {
 		background: color.White,
 		text:       color.Black,
 		lines:      lines,
+		message:    message,
 	}
 }
 
@@ -42,11 +45,24 @@ type Postcard struct {
 	background color.Color
 	text       color.Color
 	lines      []string
+	message    string
 }
 
-// Render draws the postcard image with the provided text.
-func (p *Postcard) Render() (*image.Paletted, error) {
-	const startingFontSize = 400.0
+func (p *Postcard) SetFontPreferences(fontNames ...string) bool {
+	for _, name := range fontNames {
+		f, ok := fonts[name]
+		if ok {
+			p.font = f
+			return true
+		}
+	}
+	return false
+}
+
+// Render draws the postcard image with the provided text and
+// encodes it as a png.
+func (p *Postcard) Render() ([]byte, error) {
+	const startingFontSize = 500.0
 
 	fontSize := startingFontSize
 	img, err := p.render(fontSize)
@@ -54,25 +70,27 @@ func (p *Postcard) Render() (*image.Paletted, error) {
 		fontSize = 3.0 * fontSize / 4.0
 		img, err = p.render(fontSize)
 	}
-	return img, err
+	if err != nil {
+		return nil, err
+	}
+
+	var buf bytes.Buffer
+	err = png.Encode(&buf, img)
+	return buf.Bytes(), err
 }
 
 var errTooBig = errors.New("message too big")
 
 func (p *Postcard) render(fontSize float64) (*image.Paletted, error) {
-	const (
-		safeBufferPixels  = 20
-		lineSpacingPixels = 100
-	)
+	const safeBufferPixels = 40
 
 	sz := postcardSizes[p.size]
-
 	img := image.NewPaletted(sz.dimensions, p.palette)
 	draw.Draw(img, sz.dimensions, image.White, image.ZP, draw.Src)
 
 	c := freetype.NewContext()
 	c.SetFont(p.font)
-	c.SetDPI(72)
+	c.SetDPI(400)
 	c.SetFontSize(fontSize)
 	c.SetClip(sz.dimensions)
 	c.SetDst(img)
