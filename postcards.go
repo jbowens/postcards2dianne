@@ -1,4 +1,4 @@
-package postcards2diane
+package postcards2dianne
 
 import (
 	"bytes"

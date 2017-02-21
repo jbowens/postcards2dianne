@@ -9,13 +9,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jbowens/postcards2diane"
+	"github.com/jbowens/postcards2dianne"
 )
 
 const (
 	envLobAPIKey        = "LOB_API_KEY"
 	defaultPostcardSize = "6x11"
-	defaultConfigFile   = ".postcards2diane.json"
+	defaultConfigFile   = ".postcards2dianne.json"
 )
 
 type linesFlag []string
@@ -33,7 +33,7 @@ func main() {
 	var dry bool
 	var lines, fonts linesFlag
 	var toAlias, message string
-	flag.StringVar(&toAlias, "to", "diane", "the address alias of the recipient")
+	flag.StringVar(&toAlias, "to", "dianne", "the address alias of the recipient")
 	flag.StringVar(&message, "message", "", "the message to appear on the back of the postcard (required)")
 	flag.Var(&lines, "lines", "the lines to appear on the front of the postcard. provide multiple times for multiple lines (required)")
 	flag.Var(&fonts, "font", "the preferred font to use")
@@ -56,13 +56,13 @@ func main() {
 	}
 	configFile := filepath.Join(usr.HomeDir, defaultConfigFile)
 
-	lob, err := postcards2diane.NewLobClient(lobAPIKey, configFile)
+	lob, err := postcards2dianne.NewLobClient(lobAPIKey, configFile)
 	if err != nil {
 		fatalf("error: %s", err)
 	}
 
 	// Build the postcard.
-	p := postcards2diane.New(defaultPostcardSize, lines, message)
+	p := postcards2dianne.New(defaultPostcardSize, lines, message)
 	if len(fonts) > 0 {
 		ok := p.SetFontPreferences(fonts...)
 		if !ok {
